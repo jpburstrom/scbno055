@@ -1,0 +1,1 @@
+python /Users/johannes/src/supercollider/tools/cmake_gen/generate_server_plugin_cmake.py -P "SCBNO055" -p "plugins/SCBNO055" -a "Johannes Burström"
