@@ -1,0 +1,76 @@
+TITLE:: BNO
+summary:: Read data from BNO055 IMU over i2c.
+categories:: UGens > BELA
+related:: Classes/AnalogIn, Classes/DigitalIn
+
+DESCRIPTION::
+
+An UGen to read data from the Bosch BNO055 IMU over i2c on the BELA board.
+
+NOTE::
+This UGen only works on BELA.
+::
+
+NOTE::
+Calibration is more of an orientation normalization, and doesn't affect the raw accel/gyro/mag values.
+::
+
+WARNING:: Note that the magnetometer values might drift over time ::
+
+CLASSMETHODS::
+
+METHOD:: orientationKr
+Get pitch, roll, and yaw as a three-item array.
+
+METHOD:: rollKr
+Get rotation around the front-to-back axis.
+
+METHOD:: pitchKr
+Get rotation around the side-to-side axis.
+
+METHOD:: yawKr
+Get rotation around the vertical axis.
+
+METHOD:: accelKr
+Get accelerometer values (code::[x, y, z]::).
+
+METHOD:: magKr
+Get magnetometer values (code::[x, y, z]::).
+
+METHOD:: gyroKr
+Get angular velocity values (code::[x, y, z]::).
+
+METHOD:: calibrateNeutral
+Calibrate sensor from a neutral position
+
+METHOD:: calibrateDown
+Calibrate sensor facing down.
+
+code::
+//Place sensor in a neutral position (facing front)
+MPU.calibrateNeutral
+//Then face down and evaluate next line
+MPU.calibrateDown
+//Sensor position is now calibrated, putting neutral position at [0, 0, 0].
+::
+
+METHOD:: saveCalibration
+Save current calibration to a file, to use for later. Path defaults to code::Platform.userConfigDir +/+ "bnoCalibration.bin"::.
+
+NOTE:: On the Bela board, default path is code::"/root/.config/SuperCollider/bnoCalibration.bin"::. The server needs to be booted. ::
+
+METHOD:: loadCalibration
+Load a previously saved calibration file. Path defaults to code::Platform.userConfigDir +/+ "bnoCalibration.bin"::.
+
+NOTE:: On the Bela board, default path is code::"/root/.config/SuperCollider/bnoCalibration.bin"::. The server needs to be booted. ::
+
+
+
+EXAMPLES::
+
+code::
+//X, Y and Z controlling three oscillators
+x = { Mix(SinOsc.ar(MPU.accelKr.linlin(-1, 1, 220, 440)))  * 0.1.dup }.play
+
+x.free;
+::
