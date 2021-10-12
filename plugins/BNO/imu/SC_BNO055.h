@@ -14,11 +14,16 @@ Johannes Burström 2021
 
 #include "Bela_BNO055.h"
 
+/*
 typedef struct  {
 	imu::Vector<3> accel;
 	imu::Vector<3> gyro;
 	imu::Vector<3> mag;
 	imu::Vector<3> orientation;
+} bnoState_t;
+*/
+typedef struct  {
+    float ax, ay, az, gx, gy, gz, mx, my, mz, pitch, roll, yaw;
 } bnoState_t;
 
 typedef struct {

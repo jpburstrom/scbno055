@@ -4,6 +4,9 @@
 # 2021-10-11
 ####################################################################################################
 
+set(CMAKE_CXX_COMPILER_WORKS 1)
+set(CMAKE_C_COMPILER_WORKS 1)
+
 ####################################################################################################
 # basic project config
 cmake_minimum_required(VERSION 3.12)
@@ -66,14 +69,14 @@ endif()
 
 set(BNO_cpp_files
     plugins/BNO/BNO.cpp
-    plugins/BNO/imu/Bela_BNO055.cpp
-    plugins/BNO/imu/SC_BNO055.cpp
-    plugins/BNO/imu/quaternion.h
-    plugins/BNO/imu/matrix.h
-    plugins/BNO/imu/imumaths.h
-    plugins/BNO/imu/SC_BNO055.h
-    plugins/BNO/imu/Bela_BNO055.h
-    plugins/BNO/imu/vector.h
+ #   plugins/BNO/imu/Bela_BNO055.cpp
+ #   plugins/BNO/imu/SC_BNO055.cpp
+ #   plugins/BNO/imu/quaternion.h
+ #   plugins/BNO/imu/matrix.h
+ #   plugins/BNO/imu/imumaths.h
+ #   plugins/BNO/imu/SC_BNO055.h
+ #   plugins/BNO/imu/Bela_BNO055.h
+ #   plugins/BNO/imu/vector.h
 )
 set(BNO_sc_files
     plugins/BNO/BNO.sc

@@ -43,14 +43,14 @@ bool SC_BNO055::setup() {
 	return true;
 }
 
-void SC_BNO055::setCalibration(bnoCalibration_t calData);
+void SC_BNO055::setCalibration(bnoCalibration_t calData)
 {
 	mIdleConj = calData.idleConj;
 	mCal = calData.cal;
 	resetOrientation();
 }
 
-void SC_BNO055::getCalibration(bnoCalibration_t &calData);
+void SC_BNO055::getCalibration(bnoCalibration_t &calData)
 {
     calData.idleConj = mIdleConj;
     calData.cal = mCal;
@@ -70,9 +70,11 @@ void SC_BNO055::readIMU(bnoState_t &state)
 
     //Think this should work
     //Now these are raw values, not calibrated
-    state.accel = bno.getVector(VECTOR_ACCELEROMETER)
-    state.gyro = bno.getVector(VECTOR_GYROSCOPE)
-    state.mag = bno.getVector(VECTOR_MAGNETOMETER)
+    /*FIXME
+    state.accel = bno.getVector(I2C_BNO055::VECTOR_ACCELEROMETER);
+    state.gyro = bno.getVector(I2C_BNO055::VECTOR_GYROSCOPE);
+    state.mag = bno.getVector(I2C_BNO055::VECTOR_MAGNETOMETER);
+    */
 
 	
 	// quaternion data routine from MrHeadTracker
@@ -87,7 +89,8 @@ void SC_BNO055::readIMU(bnoState_t &state)
   	quat = mCalLeft * steering; // transform it to calibrated coordinate system
   	quat = quat * mCalRight;
 
-    state.orientation = quat.toEuler(); // transform from quaternion to Euler
+    //FIXME
+    //state.orientation = quat.toEuler(); // transform from quaternion to Euler
 
 }
 

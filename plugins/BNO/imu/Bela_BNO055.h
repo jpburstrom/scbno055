@@ -40,6 +40,7 @@ The Bela software is distributed under the GNU Lesser General Public License
 #ifndef BNO055_H_
 #define BNO055_H_
 
+#include "Bela.h"
 #include "I2c.h"
 #include "imumaths.h"
 //#include "Utilities.h"
