@@ -20,16 +20,16 @@ WARNING:: Note that the magnetometer values might drift over time ::
 CLASSMETHODS::
 
 METHOD:: orientationKr
-Get pitch, roll, and yaw as a three-item array.
+Get pitch, roll, and yaw as an array (in that order).
 
-METHOD:: rollKr
-Get rotation around the front-to-back axis.
+ARGUMENT::calibrate
+Trigger orientation calibration. Calibration is done in two steps, first in a neutral position, then facing down. After the second calibration the orientation vector is normalized to the neutral position.
 
-METHOD:: pitchKr
-Get rotation around the side-to-side axis.
+ARGUMENT::load
+Load previously saved calibration data (path is currently hardcoded to code::~/.bnoCalibration::)
 
-METHOD:: yawKr
-Get rotation around the vertical axis.
+ARGUMENT::save
+Save calibration data (path is currently hardcoded to code::~/.bnoCalibration::)
 
 METHOD:: accelKr
 Get accelerometer values (code::[x, y, z]::).
@@ -39,31 +39,6 @@ Get magnetometer values (code::[x, y, z]::).
 
 METHOD:: gyroKr
 Get angular velocity values (code::[x, y, z]::).
-
-METHOD:: calibrateNeutral
-Calibrate sensor from a neutral position
-
-METHOD:: calibrateDown
-Calibrate sensor facing down.
-
-code::
-//Place sensor in a neutral position (facing front)
-MPU.calibrateNeutral
-//Then face down and evaluate next line
-MPU.calibrateDown
-//Sensor position is now calibrated, putting neutral position at [0, 0, 0].
-::
-
-METHOD:: saveCalibration
-Save current calibration to a file, to use for later. Path defaults to code::Platform.userConfigDir +/+ "bnoCalibration.bin"::.
-
-NOTE:: On the Bela board, default path is code::"/root/.config/SuperCollider/bnoCalibration.bin"::. The server needs to be booted. ::
-
-METHOD:: loadCalibration
-Load a previously saved calibration file. Path defaults to code::Platform.userConfigDir +/+ "bnoCalibration.bin"::.
-
-NOTE:: On the Bela board, default path is code::"/root/.config/SuperCollider/bnoCalibration.bin"::. The server needs to be booted. ::
-
 
 
 EXAMPLES::
