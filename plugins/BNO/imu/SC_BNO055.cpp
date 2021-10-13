@@ -29,7 +29,7 @@ bool SC_BNO055::setup() {
 		rt_printf("Error initialising BNO055\n");
 		return false;
 	}
-	
+
 	rt_printf("Initialised BNO055\n");
 	
 	// use external crystal for better accuracy
@@ -39,6 +39,8 @@ bool SC_BNO055::setup() {
 	uint8_t sysStatus, selfTest, sysError;
   	bno.getSystemStatus(&sysStatus, &selfTest, &sysError);
 	rt_printf("System Status: %d (0 is Idle)   Self Test: %d (15 is all good)   System Error: %d (0 is no error)\n", sysStatus, selfTest, sysError);
+	// get calibration status
+	uint8_t sys, gyro, accel, mag;
 
 	return true;
 }
@@ -46,14 +48,13 @@ bool SC_BNO055::setup() {
 void SC_BNO055::setCalibration(bnoCalibration_t calData)
 {
 	mIdleConj = calData.idleConj;
-	mCal = calData.cal;
-	resetOrientation();
+	mGravCal = calData.cal;
 }
 
 void SC_BNO055::getCalibration(bnoCalibration_t &calData)
 {
     calData.idleConj = mIdleConj;
-    calData.cal = mCal;
+    calData.cal = mGravCal;
 }
 
 
@@ -63,34 +64,40 @@ void SC_BNO055::readIMU(bnoState_t &state)
 {
 	// get calibration status
 	uint8_t sys, gyro, accel, mag;
-	bno.getCalibration(&sys, &gyro, &accel, &mag);
-	// status of 3 means fully calibrated
-	//rt_printf("CALIBRATION STATUSES\n");
-	//rt_printf("System: %d   Gyro: %d Accel: %d  Mag: %d\n", sys, gyro, accel, mag);
 
-    //Think this should work
-    //Now these are raw values, not calibrated
-    /*FIXME
-    state.accel = bno.getVector(I2C_BNO055::VECTOR_ACCELEROMETER);
-    state.gyro = bno.getVector(I2C_BNO055::VECTOR_GYROSCOPE);
-    state.mag = bno.getVector(I2C_BNO055::VECTOR_MAGNETOMETER);
-    */
+	bno.getCalibration(&sys, &gyro, &accel, &mag);
+
+    imu::Vector<3> vec;
+
+
+    vec = bno.getVector(I2C_BNO055::VECTOR_ACCELEROMETER);
+    state.ax = vec.x();
+    state.ay = vec.y();
+    state.az = vec.z();
+
+    vec = bno.getVector(I2C_BNO055::VECTOR_GYROSCOPE);
+    state.gx = vec.x();
+    state.gy = vec.y();
+    state.gz = vec.z();
+
+    vec = bno.getVector(I2C_BNO055::VECTOR_MAGNETOMETER);
+    state.mx = vec.x();
+    state.my = vec.y();
+    state.mz = vec.z();
 
 	
 	// quaternion data routine from MrHeadTracker
   	imu::Quaternion qRaw = bno.getQuat(); //get sensor raw quaternion data
   	
-  	if( setForward ) {
-  		mIdleConj = qRaw.conjugate(); // sets what is looking forward
-  		setForward = 0; // reset flag so only happens once
-  	}
-		
   	steering = mIdleConj * qRaw; // calculate relative rotation data
   	quat = mCalLeft * steering; // transform it to calibrated coordinate system
   	quat = quat * mCalRight;
 
-    //FIXME
-    //state.orientation = quat.toEuler(); // transform from quaternion to Euler
+    //Yaw, Pitch, Roll, Yaw
+    vec = quat.toEuler(); // transform from quaternion to Euler
+    state.yaw = vec[0];
+    state.pitch = vec[1];
+    state.roll = vec[2];
 
 }
 
@@ -98,6 +105,7 @@ void SC_BNO055::readIMU(bnoState_t &state)
 void SC_BNO055::getNeutralGravity() {
 	// read in gravity value
   	imu::Vector<3> gravity = bno.getVector(I2C_BNO055::VECTOR_GRAVITY);
+    mIdleConj = bno.getQuat().conjugate(); // sets what is looking forward
   	gravity = gravity.scale(-1);
   	gravity.normalize();
   	mGravIdle = gravity;
@@ -110,14 +118,12 @@ void SC_BNO055::getDownGravity() {
   	gravity = gravity.scale(-1);
   	gravity.normalize();
   	mGravCal = gravity;
-  	// run calibration routine as we should have both gravity values
-  	calibrate(); 
 }
 
 // calibration of coordinate system from MrHeadTracker
 // see http://www.aes.org/e-lib/browse.cfm?elib=18567 for full paper
 // describing algorithm
-void SC_BNO055::calibrate() {
+void SC_BNO055::recalcCalibration() {
   	imu::Vector<3> g, gravCalTemp, x, y, z;
   	g = mGravIdle; // looking forward in neutral position
   
@@ -153,5 +159,3 @@ void SC_BNO055::resetOrientation() {
   	mCalLeft = mCal.conjugate();
   	mCalRight = mCal;
 }
-
-

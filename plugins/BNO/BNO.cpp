@@ -3,7 +3,8 @@
 #include "SC_Lock.h"
 #include "SC_PlugIn.h"
 
-#include "mock.hpp"
+//#include "mock.hpp"
+#include "imu/SC_BNO055.h"
 
 // written with reference to the chapter "Writing Unit Generator Plug-ins" in The SuperCollider Book
 // and also http://doc.sccode.org/Guides/WritingUGens.html accessed March 2, 2015
@@ -33,7 +34,7 @@ struct BNO : public Unit {
 bnoState_t gData = {0.1, 0.2, 0.3,
     0.2, 0.0, 0.4,
     0.3, 0.0, 0.5,
-    0.4, 0.5, 0.6};
+    0.41, 0.51, 0.61};
 
 
 enum bnoTask {
@@ -139,9 +140,9 @@ void BNO_next_k(BNO *unit, int numSamples) {
             OUT0(2) = gData.mz;
             break;
         case CH_ORI:
-            OUT0(0) = gData.p;
-            OUT0(1) = gData.r;
-            OUT0(2) = gData.y;
+            OUT0(0) = gData.pitch;
+            OUT0(1) = gData.roll;
+            OUT0(2) = gData.yaw;
             break;
         }
 
@@ -166,8 +167,7 @@ void *gstate_update_func(void *param) {
         while ( currentTask.load( std::memory_order_relaxed ) != TASK_STOP ) {
             currentTask = newTask;
             while ( currentTask.load( std::memory_order_relaxed ) == TASK_RUN ) {
-                //TODO: Fetch all data from IMU (4x3 floats)
-                //bno.readIMU(gData);
+                bno.readIMU(gData);
                 std::this_thread::sleep_for( std::chrono::duration<float, std::milli>(INTERVAL)  );
             }
             while ( currentTask.load( std::memory_order_relaxed ) == TASK_CALIBRATE_IDLE ) {
@@ -183,6 +183,7 @@ void *gstate_update_func(void *param) {
             case TASK_CALIBRATE_2:
                 printf("BNO: Calibrating, tilted down\n");
                 bno.getDownGravity();
+                bno.recalcCalibration();
                 newTask = TASK_RUN;
                 break;
             case TASK_SAVE:

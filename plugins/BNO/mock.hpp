@@ -4,7 +4,7 @@ typedef struct  {
     float ax, ay, az,
         gx, gy, gz,
         mx, my, mz,
-        p, r, y;
+        pitch, roll, yaw;
 } bnoState_t;
 
 typedef struct {
