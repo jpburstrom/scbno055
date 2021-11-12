@@ -206,6 +206,7 @@ void *gstate_update_func(void *param) {
                     fread(&(calData), sizeof(bnoCalibration_t), 1, fp);
                     fclose(fp);
                     bno.setCalibration(calData);
+                    bno.recalcCalibration();
                   } else {
                     printf("BNO: Couldn't open file for reading\n");
                   }

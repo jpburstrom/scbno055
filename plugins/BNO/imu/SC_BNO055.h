@@ -21,7 +21,8 @@ typedef struct  {
 
 typedef struct {
 	imu::Quaternion idleConj;
-	imu::Vector<3> cal;
+	imu::Vector<3> gravIdle;
+	imu::Vector<3> gravCal;
 } bnoCalibration_t;
 
 class SC_BNO055 {

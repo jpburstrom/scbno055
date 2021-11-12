@@ -48,13 +48,15 @@ bool SC_BNO055::setup() {
 void SC_BNO055::setCalibration(bnoCalibration_t calData)
 {
 	mIdleConj = calData.idleConj;
-	mGravCal = calData.cal;
+	mGravCal = calData.gravCal;
+	mGravIdle = calData.gravIdle;
 }
 
 void SC_BNO055::getCalibration(bnoCalibration_t &calData)
 {
     calData.idleConj = mIdleConj;
-    calData.cal = mGravCal;
+    calData.gravCal = mGravCal;
+    calData.gravIdle = mGravIdle;
 }
 
 
