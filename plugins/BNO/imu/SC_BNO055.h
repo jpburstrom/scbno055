@@ -37,6 +37,8 @@ public:
 	void getDownGravity();
 	void recalcCalibration();
 
+
+
 private:
 	// Change this to change how often the BNO055 IMU is read (in Hz)
 	int readInterval = 100;

@@ -1,6 +1,5 @@
-#include <pthread.h>
 #include <atomic>
-#include "SC_Lock.h"
+#include <Bela.h>
 #include "SC_PlugIn.h"
 
 //#include "mock.hpp"
@@ -12,10 +11,6 @@
 
 static InterfaceTable *ft;
 
-//Read interval
-#define INTERVAL 2.5
-#define IDLE_INTERVAL 100
-
 struct BNO : public Unit {
     //Outputs 3 values
     static const int ACCEL = 0;
@@ -25,6 +20,9 @@ struct BNO : public Unit {
 
     int channel = ORIENTATION;
     int outputs = 3;
+    int readIntervalSamples;
+    int readCount;
+
     float m_caltrig;
     float m_loadtrig;
     float m_savetrig;
@@ -58,12 +56,12 @@ enum bnoChannel {
 //Current command
 std::atomic_int currentTask = { TASK_STOP };
 
+AuxiliaryTask readTask;		// Auxiliary task to read I2C
+AuxiliaryTask miscTask;		// Auxiliary task to do other stuff
 
-// PLUGIN INTERFACE
 void BNO_Ctor(BNO *unit);
 void BNO_next_k(BNO *unit, int numSamples);
 
-// PLUGIN IMPLEMENTATION
 SC_BNO055 bno;
 
 void BNO_Ctor(BNO *unit) {
@@ -72,6 +70,8 @@ void BNO_Ctor(BNO *unit) {
     unit->m_caltrig = 0.f;
     unit->m_savetrig = 0.f;
     unit->m_loadtrig = 0.f;
+
+    unit->readIntervalSamples = SAMPLERATE / 100; //100 reads / sec
 
     SETCALC(BNO_next_k);
     BNO_next_k(unit, 1);
@@ -87,6 +87,19 @@ void BNO_next_k(BNO *unit, int numSamples) {
     float load_prevtrig = unit->m_loadtrig;
     float save_prevtrig = unit->m_savetrig;
 
+
+    for(unsigned int n=0; n < numSamples; n++) {
+        unit->readCount += 1;
+        if(unit->readCount >= unit->readIntervalSamples) {
+            unit->readCount = 0;
+            if (currentTask == TASK_RUN) {
+                Bela_scheduleAuxiliaryTask(readTask);
+            } else {
+                Bela_scheduleAuxiliaryTask(miscTask);
+            }
+        }
+    }
+
     //If we're currently not in a command, check for command triggers
     if ((currentTask & TASK_CMD) != TASK_CMD) {
         //Calibration
@@ -95,10 +108,10 @@ void BNO_next_k(BNO *unit, int numSamples) {
             if (trig > 0.f && cal_prevtrig <= 0.f) {
                 if (currentTask == TASK_CALIBRATE_IDLE) {
                     currentTask = TASK_CALIBRATE_2;
-                    printf("Calibrating, step 2\n");
+                    rt_printf("Calibrating, step 2\n");
                 } else {
                     currentTask = TASK_CALIBRATE_1;
-                    printf("Calibrating, step 1\n");
+                    rt_printf("Calibrating, step 1\n");
                 }
             }
             cal_prevtrig = trig;
@@ -106,12 +119,14 @@ void BNO_next_k(BNO *unit, int numSamples) {
             trig = ZXP(loadInput);
             if (trig > 0.f && load_prevtrig <= 0.f) {
                 currentTask = TASK_LOAD;
+                //call aux task here
             }
             load_prevtrig = trig;
 
             trig = ZXP(saveInput);
             if (trig > 0.f && save_prevtrig <= 0.f) {
                 currentTask = TASK_SAVE;
+                //call aux task here
             }
             save_prevtrig = trig;
         }
@@ -156,81 +171,78 @@ void BNO_next_k(BNO *unit, int numSamples) {
     }
 }
 
-//Threading stuff
-void *gstate_update_func(void *param) {
-    if ( bno.setup() ) {
-        int newTask = currentTask;
-        char calibrationPath[128];
-        snprintf(calibrationPath, 127, "%s/.bnoCalibration", getenv("HOME"));
-        bnoCalibration_t calData;
-        FILE *fp;
-        while ( currentTask.load( std::memory_order_relaxed ) != TASK_STOP ) {
-            currentTask = newTask;
-            while ( currentTask.load( std::memory_order_relaxed ) == TASK_RUN ) {
-                bno.readIMU(gData);
-                std::this_thread::sleep_for( std::chrono::duration<float, std::milli>(INTERVAL)  );
-            }
-            while ( currentTask.load( std::memory_order_relaxed ) == TASK_CALIBRATE_IDLE ) {
-                std::this_thread::sleep_for( std::chrono::duration<float, std::milli>(IDLE_INTERVAL)  );
-            }
-            switch ( currentTask.load( std::memory_order_relaxed ) ) {
-            case TASK_CALIBRATE_1:
-                printf("BNO: Calibrating, neutral position\n");
-                bno.getNeutralGravity();
-                newTask = TASK_CALIBRATE_IDLE;
-                break;
-
-            case TASK_CALIBRATE_2:
-                printf("BNO: Calibrating, tilted down\n");
-                bno.getDownGravity();
-                bno.recalcCalibration();
-                newTask = TASK_RUN;
-                break;
-            case TASK_SAVE:
-                Print("Saving calibration\n");
-                  fp = fopen(calibrationPath, "wb+");
-                  if (fp != NULL) {
-                    bno.getCalibration(calData);
-                    fwrite(&calData, sizeof(bnoCalibration_t), 1, fp);
-                    fclose(fp);
-                  } else {
-                    printf("BNO: Couldn't open file for writing\n");
-                  }
-                newTask = TASK_RUN;
-                break;
-
-            case TASK_LOAD:
-                Print("Loading calibration\n");
-                  fp = fopen(calibrationPath, "rb");
-                  if (fp != NULL) {
-                    fread(&(calData), sizeof(bnoCalibration_t), 1, fp);
-                    fclose(fp);
-                    bno.setCalibration(calData);
-                    bno.recalcCalibration();
-                  } else {
-                    printf("BNO: Couldn't open file for reading\n");
-                  }
-                newTask = TASK_RUN;
-                break;
-            }
-
-        }
-    } else {
-		printf("Error initialising BNO055\n");
-    }
-    //We need to return something
-    return NULL;
+void readIMU(void*) {
+    bno.readIMU(gData);
 }
 
-pthread_t bnoThread;
+void imuMisc(void*) {
+    char calibrationPath[128];
+    snprintf(calibrationPath, 127, "%s/.bnoCalibration", getenv("HOME"));
+    bnoCalibration_t calData;
+    FILE *fp;
+    switch ( currentTask.load( std::memory_order_relaxed ) ) {
+        case TASK_CALIBRATE_IDLE:
+            break;
+
+        case TASK_CALIBRATE_1:
+            printf("BNO: Calibrating, neutral position\n");
+            bno.getNeutralGravity();
+            currentTask = TASK_CALIBRATE_IDLE;
+            break;
+
+        case TASK_CALIBRATE_2:
+            printf("BNO: Calibrating, tilted down\n");
+            bno.getDownGravity();
+            bno.recalcCalibration();
+            currentTask = TASK_RUN;
+            break;
+        case TASK_SAVE:
+            Print("Saving calibration\n");
+            fp = fopen(calibrationPath, "wb+");
+            if (fp != NULL) {
+                bno.getCalibration(calData);
+                fwrite(&calData, sizeof(bnoCalibration_t), 1, fp);
+                fclose(fp);
+            } else {
+                printf("BNO: Couldn't open file for writing\n");
+            }
+            currentTask = TASK_RUN;
+            break;
+
+        case TASK_LOAD:
+            Print("Loading calibration\n");
+            fp = fopen(calibrationPath, "rb");
+            if (fp != NULL) {
+                fread(&(calData), sizeof(bnoCalibration_t), 1, fp);
+                fclose(fp);
+                bno.setCalibration(calData);
+                bno.recalcCalibration();
+            } else {
+                printf("BNO: Couldn't open file for reading\n");
+            }
+            currentTask = TASK_RUN;
+            break;
+    }
+}
+
+//pthread_t bnoThread;
 
 PluginLoad(BNO)
 {
 
     ft = inTable;
-    currentTask = TASK_LOAD;
-    //TODO: do we need to start thread here?
-    pthread_create(&bnoThread, NULL, gstate_update_func, &gData);
+
+    readTask = Bela_createAuxiliaryTask(readIMU, 50, "scbno55-read");
+    miscTask = Bela_createAuxiliaryTask(imuMisc, 50, "scbno55-misc");
+
+    if ( bno.setup() ) {
+        currentTask = TASK_LOAD;
+        //Run task first time to load calibration data
+        Bela_scheduleAuxiliaryTask(miscTask);
+    } else {
+		printf("Error initialising BNO055\n");
+        currentTask = TASK_STOP;
+    }
 
 
     DefineSimpleUnit(BNO);
@@ -239,5 +251,5 @@ PluginLoad(BNO)
 C_LINKAGE SC_API_EXPORT void unload(InterfaceTable *inTable)
 {
     currentTask = TASK_STOP;
-    pthread_join(bnoThread, NULL);
+    //pthread_join(bnoThread, NULL);
 }
