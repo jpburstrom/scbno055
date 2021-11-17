@@ -40,8 +40,6 @@ public:
 
 
 private:
-	// Change this to change how often the BNO055 IMU is read (in Hz)
-	int readInterval = 100;
 	I2C_BNO055 bno; // IMU sensor object
 
 	// Quaternions and Vectors
@@ -49,9 +47,6 @@ private:
 	imu::Quaternion quat, steering, qRaw;
 
 	imu::Vector<3> mGravIdle, mGravCal;
-
-	int readCount = 0;			// How long until we read again...
-	int readIntervalSamples = 0; // How many samples between reads
 
 	//int printThrottle = 0; // used to limit printing frequency
 	void resetOrientation();

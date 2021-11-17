@@ -40,8 +40,6 @@ bool SC_BNO055::setup() {
   	bno.getSystemStatus(&sysStatus, &selfTest, &sysError);
 	rt_printf("System Status: %d (0 is Idle)   Self Test: %d (15 is all good)   System Error: %d (0 is no error)\n", sysStatus, selfTest, sysError);
 	// get calibration status
-	uint8_t sys, gyro, accel, mag;
-
 	return true;
 }
 

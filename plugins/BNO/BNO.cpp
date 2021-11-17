@@ -65,6 +65,7 @@ void BNO_next_k(BNO *unit, int numSamples);
 
 SC_BNO055 bno;
 
+
 void readIMU(void*) {
     bno.readIMU(gData);
 }
@@ -155,7 +156,7 @@ void BNO_next_k(BNO *unit, int numSamples) {
     float save_prevtrig = unit->m_savetrig;
 
 
-    for(unsigned int n=0; n < numSamples; n++) {
+    for(int n=0; n < numSamples; n++) {
         unit->readCount += 1;
         if(unit->readCount >= unit->readIntervalSamples) {
             unit->readCount = 0;
@@ -239,8 +240,6 @@ void BNO_next_k(BNO *unit, int numSamples) {
 }
 
 
-//pthread_t bnoThread;
-
 PluginLoad(BNO)
 {
 
@@ -254,10 +253,4 @@ PluginLoad(BNO)
     }
 
     DefineSimpleUnit(BNO);
-}
-
-C_LINKAGE SC_API_EXPORT void unload(InterfaceTable *inTable)
-{
-    currentTask = TASK_STOP;
-    //pthread_join(bnoThread, NULL);
 }
