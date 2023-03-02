@@ -48,6 +48,44 @@ endif()
 
 message(STATUS "Install directory set to: ${CMAKE_INSTALL_PREFIX}")
 
+
+###################################################################################################
+# Optimizations, see eg. https://github.com/TheTechnobear/SoundplaneLite/blob/master/CMakeLists.txt
+if (NOT DEFINED CPU_OPTIMIZATION_FLAGS)
+    if (APPLE)
+    elseif (UNIX)
+        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm")
+            if (BELA)
+                message(STATUS "BELA optimized")
+                set(CMAKE_BUILD_TYPE Release) # this has to come after project()
+                set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+                set(CMAKE_C_FLAGS "-O3 ${CMAKE_C_FLAGS}")
+        	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon -ftree-vectorize")
+        	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBELA")
+                if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+                    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
+                else()
+                    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsingle-precision-constant --fast-math")
+                endif()
+
+                # set(BELA_LINK_FLAGS "-v ${BELA_LINK_FLAGS} -Wl,@${PROJECT_SOURCE_DIR}/xenomai.wrappers -Wl,--no-as-needed -L/usr/xenomai/lib -lcobalt -lmodechk -lpthread -lrt")
+                # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${BELA_LINK_FLAGS}")
+                #set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${BELA_LINK_FLAGS}")
+                #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${BELA_LINK_FLAGS}")
+                #set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${BELA_LINK_FLAGS} ")
+            else ()
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv7-a -mfpu=neon -mfloat-abi=hard")
+            endif ()
+        else ()
+            #        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Wall")
+        endif ()
+    endif ()
+else()
+    message(STATUS "Using provided optimization flags '${CPU_OPTIMIZATION_FLAGS}'")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPU_OPTIMIZATION_FLAGS}")
+endif ()
+
+
 ####################################################################################################
 # options
 option(SUPERNOVA "Build plugins for supernova" ON)
