@@ -1,0 +1,51 @@
+TITLE:: BNO
+summary:: Read data from BNO055 IMU over i2c.
+categories:: UGens > BELA
+related:: Classes/AnalogIn, Classes/DigitalIn
+
+DESCRIPTION::
+
+An UGen to read data from the Bosch BNO055 IMU over i2c on the BELA board.
+
+NOTE::
+This UGen only works on BELA.
+::
+
+NOTE::
+Calibration is more of an orientation normalization, and doesn't affect the raw accel/gyro/mag values.
+::
+
+WARNING:: Note that the magnetometer values might drift over time ::
+
+CLASSMETHODS::
+
+METHOD:: orientationKr
+Get pitch, roll, and yaw as an array (in that order).
+
+ARGUMENT::calibrate
+Trigger orientation calibration. Calibration is done in two steps, first in a neutral position, then facing down. After the second calibration the orientation vector is normalized to the neutral position.
+
+ARGUMENT::load
+Load previously saved calibration data (path is currently hardcoded to code::~/.bnoCalibration::)
+
+ARGUMENT::save
+Save calibration data (path is currently hardcoded to code::~/.bnoCalibration::)
+
+METHOD:: accelKr
+Get accelerometer values (code::[x, y, z]::).
+
+METHOD:: magKr
+Get magnetometer values (code::[x, y, z]::).
+
+METHOD:: gyroKr
+Get angular velocity values (code::[x, y, z]::).
+
+
+EXAMPLES::
+
+code::
+//X, Y and Z controlling three oscillators
+x = { Mix(SinOsc.ar(MPU.accelKr.linlin(-1, 1, 220, 440)))  * 0.1.dup }.play
+
+x.free;
+::
