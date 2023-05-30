@@ -2,4 +2,4 @@
 
 wd=$(dirname $0)
 
-scp -r $wd/Extensions/BNO root@bela:/root/.local/share/SuperCollider/Extensions/
+scp -r $wd/Extensions/BNO root@bela.local:/root/.local/share/SuperCollider/Extensions/
