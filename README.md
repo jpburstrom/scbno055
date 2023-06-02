@@ -11,7 +11,9 @@ A BNO055 sensor plugin for Bela and SuperCollider
 
 ### Installing
 
-If you don't want to build the extension yourself, there is a compiled binary in the Extensions directory. Install it from the host computer (with the Bela attached) with the `bela-install.sh` script in the repository root.
+If you don't want to build the extension yourself, there is a compiled binary in the Extensions directory. Install it from the host computer (with the Bela attached), using the `bela-install.sh` script in the repository root. Instead of using the script, you can also move the extension manually. Simply copy the folder `Extensions/BNO` to `~/.local/share/SuperCollider/Extensions`, using FileZilla and the SSH credentials of your Bela. 
+
+Afterwards you should be able to load the example at the very bottom of `scbno055-main/plugins/BNO/HelpSource/Classes/BNO.schelp` on your Bela.
 
 ### Building
 

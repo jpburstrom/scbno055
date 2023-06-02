@@ -45,7 +45,7 @@ EXAMPLES::
 
 code::
 //X, Y and Z controlling three oscillators
-x = { Mix(SinOsc.ar(MPU.accelKr.linlin(-1, 1, 220, 440)))  * 0.1.dup }.play
+x = { Mix(SinOsc.ar(BNO.accelKr.linlin(-1, 1, 220, 440)))  * 0.1.dup }.play
 
 x.free;
 ::
